@@ -1,8 +1,15 @@
+ifeq ($(OS), Windows_NT)
+shell := cmd.exe
+ROOT_DIR = $(echo $(shell echo %CD%))
+else
+shell := /bin/sh
+ROOT_DIR = $(shell pwd)
+endif
+
 git_repo_url = $(shell git remote get-url origin)
 APP = $(shell echo $(shell basename $(git_repo_url)) | sed 's/\.git//')
 APP_REPO = $(shell echo $(git_repo_url) | sed 's/git@/https:\/\//' | sed 's/:/\//' | sed 's/\.git//')
 VERSION = $(shell git describe --tags --abbrev=0)-$(shell git rev-parse --short HEAD)
-ROOT_DIR = $(shell pwd)
 
 include .env
 export $(shell sed 's/=.*//' .env)
@@ -10,7 +17,7 @@ REGISTRY = $(REGISTRY_NAME)
 
 TARGETS = linux_amd64 linux_arm64 linux_386 darwin_amd64 darwin_arm64 windows_amd64
 OUT_DIR=bin
-supported_platforms=$(shell docker buildx inspect --bootstrap | grep Platforms | sed 's/Platforms://')
+supported_platforms=$(shell docker buildx inspect --bootstrap | awk -F: '{if (NR==11) print $$2}' | sed 's/Platforms://')
 GO_BUILD_CMD = go build -v -o ${ROOT_DIR}/${OUT_DIR}/$${target:-$@}/${APP} -ldflags "-X="${APP_REPO}/cmd.appVersion=${VERSION}
 
 .PHONY: all $(TARGETS)
@@ -29,8 +36,8 @@ lint:
 format:
 	gofmt -s -w ./src
 
-#building special targets
 $(TARGETS): format go_init
+	@echo "Building special targets"
 	# using Make functions word & subst
 	@if [ -z $(findstring $(subst _, /,$@), $(supported_platforms)) ]; then \
 		echo "This builder does not supported on this host"; \
@@ -40,6 +47,7 @@ $(TARGETS): format go_init
 	cd src && CGO_ENABLED=0 GOOS=$(word 1, $(subst _, ,$@)) GOARCH=$(word 2, $(subst _, ,$@)) $(GO_BUILD_CMD) && cd ..
 
 linux: format go_init
+	@echo "Create app supported on this host platform\n"
 	@if [ -z $(findstring $@, $(supported_platforms)) ]; then \
 		echo "This builder does not supported on this host"; \
 		exit 1; \
@@ -55,6 +63,7 @@ linux: format go_init
 	fi; \
 
 windows: format go_init
+	@echo "Create app supported on this host platform\n"
 	@if [ -z $(findstring $@, $(supported_platforms)) ]; then \
 		echo "This builder does not supported on this host"; \
 		exit 1; \
@@ -70,6 +79,7 @@ windows: format go_init
 	fi; \
 
 darwin: format go_init
+	@echo "Create app supported on this host platform\n"
 	@if [ -z $(findstring $@, $(supported_platforms)) ]; then \
 		echo "This builder does not supported on this host"; \
 		exit 1; \
@@ -85,6 +95,7 @@ darwin: format go_init
 	fi; \
 
 image:
+	@echo "Create images supported on this host platform\n"
 	docker buildx create --use
 	@for target in $(TARGETS); do \
 		os=$$(echo $$target | cut -d_ -f1); \
