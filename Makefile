@@ -29,10 +29,12 @@ format:
 
 $(TARGETS): format go_init
 	@echo "Building $(word 1, $(subst _, ,$@)) binary for $(word 2, $(subst _, ,$@))..."
-	cd src && CGO_ENABLED=0 GOOS=$(word 1, $(subst _, ,$@)) GOARCH=$(word 2, $(subst _, ,$@)) go build -v -o ${OUT_DIR}/$@/${APP} -ldflags "-X="${APP_REPO}/cmd.appVersion=${VERSION} && cd ..
+	CGO_ENABLED=0 GOOS=$(word 1, $(subst _, ,$@)) GOARCH=$(word 2, $(subst _, ,$@)) go build -v -o ${OUT_DIR}/$@/${APP} -ldflags "-X="${APP_REPO}/cmd.appVersion=${VERSION} src/*.go
 
 clean:
-	@echo "All Docker imageges will be deleted"
+	@echo "All builded Docker images will be deleted"
 	# ref: https://docs.docker.com/engine/cli/formatting/
-	docker rmi $(shell docker images "$(REGISTRY)/$(APP)" --format "{{.Repository}}:{{.Tag}}" || true) || true
-	rm -rf ${OUT_DIR)
+	@if [ -n "$$(docker images "$(REGISTRY)/$(APP)" --format "{{.Repository}}:{{.Tag}}")" ]; then \
+	docker rmi $(shell docker images "$(REGISTRY)/$(APP)" --format "{{.Repository}}:{{.Tag}}"); \
+	else echo "The Docker images not found"; fi
+	[ -d ${OUT_DIR} ] && (rm -rf ${OUT_DIR})
