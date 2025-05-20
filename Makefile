@@ -49,10 +49,9 @@ $(TARGETS): format go_init
 		--build-arg APP_REPO=$(APP_REPO) \
 		--output type=docker \
 		--tag $(REGISTRY)/$(APP):${VERSION}-$$target \
-		. ;
+		.
 
 image:
-	docker buildx create --use
 	@for target in $(TARGETS); do \
 		os=$$(echo $$target | cut -d_ -f1); \
 		arch=$$(echo $$target | cut -d_ -f2); \
