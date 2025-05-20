@@ -94,23 +94,19 @@ image:
 	docker buildx create --use
 	@for target in $(TARGETS); do \
 		os=$$(echo $$target | cut -d_ -f1); \
-		if echo "$(supported_platforms)" | grep -q "$$os/"; then \
-			arch=$$(echo $$target | cut -d_ -f2); \
-			echo "Building Docker image for $$target (OS: $$os, ARCH: $$arch)..."; \
-			docker buildx build \
-				--platform $$os/$$arch \
-				--build-arg BASE_IMAGE=$(BASE_IMAGE) \
-				--build-arg GO_TAG=$(GO_TAG) \
-				--build-arg TARGETOS=$$os \
-				--build-arg TARGETARCH=$$arch \
-				--build-arg VERSION=$(VERSION) \
-				--build-arg APP_REPO=$(APP_REPO) \
-				--output type=docker \
-				--tag $(REGISTRY)/$(APP):${VERSION}-$$target \
-				. ; \
-		else \
-			echo "The $$target builder does not supported on this host"; \
-		fi; \
+		arch=$$(echo $$target | cut -d_ -f2); \
+		echo "Building Docker image for $$target (OS: $$os, ARCH: $$arch)..."; \
+		docker buildx build \
+			--platform $$os/$$arch \
+			--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+			--build-arg GO_TAG=$(GO_TAG) \
+			--build-arg TARGETOS=$$os \
+			--build-arg TARGETARCH=$$arch \
+			--build-arg VERSION=$(VERSION) \
+			--build-arg APP_REPO=$(APP_REPO) \
+			--output type=docker \
+			--tag $(REGISTRY)/$(APP):${VERSION}-$$target \
+			. ; \
 	done
 
 clean:
