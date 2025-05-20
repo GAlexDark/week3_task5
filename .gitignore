@@ -9,7 +9,5 @@
 *.conf
 *.cnf
 *.code-workspace
-.env
-*.env
 bin/
 image/
