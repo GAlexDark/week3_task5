@@ -17,8 +17,6 @@ REGISTRY = $(REGISTRY_NAME)
 
 TARGETS = linux_amd64 linux_arm64 linux_386 darwin_amd64 darwin_arm64 windows_amd64
 OUT_DIR=bin
-supported_platforms=$(shell docker buildx inspect --bootstrap | awk -F: '{if (NR==11) print $$2}' | sed 's/Platforms://')
-GO_BUILD_CMD = go build -v -o ${ROOT_DIR}/${OUT_DIR}/$${target:-$@}/${APP} -ldflags "-X="${APP_REPO}/cmd.appVersion=${VERSION}
 
 .PHONY: all $(TARGETS)
 
@@ -37,45 +35,23 @@ format:
 	gofmt -s -w ./src
 
 $(TARGETS): format go_init
-	@echo "Building special targets"
-	@echo "Building $(word 1, $(subst _, ,$@)) binary for $(word 2, $(subst _, ,$@))..."
-	cd src && CGO_ENABLED=0 GOOS=$(word 1, $(subst _, ,$@)) GOARCH=$(word 2, $(subst _, ,$@)) $(GO_BUILD_CMD) && cd ..
-
-linux: format go_init
-	@echo "Create app supported on this host platform\n"
-	for target in $(TARGETS); do \
-		os=$$(echo $$target | cut -d_ -f1); \
-		if [ "$$os" = $@ ]; then \
-			arch=$$(echo $$target | cut -d_ -f2); \
-			echo "Building $$os binary for $$arch..."; \
-			cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
-		fi; \
-	done \
-
-windows: format go_init
-	@echo "Create app supported on this host platform\n"
-	for target in $(TARGETS); do \
-		os=$$(echo $$target | cut -d_ -f1); \
-		if [ "$$os" = $@ ]; then \
-			arch=$$(echo $$target | cut -d_ -f2); \
-			echo "Building $$os binary for $$arch..."; \
-			cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
-		fi; \
-	done \
-
-darwin: format go_init
-	@echo "Create app supported on this host platform\n"
-	for target in $(TARGETS); do \
-		os=$$(echo $$target | cut -d_ -f1); \
-		if [ "$$os" = $@ ]; then \
-			arch=$$(echo $$target | cut -d_ -f2); \
-			echo "Building $$os binary for $$arch..."; \
-			cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
-		fi; \
-	done \
+	@target=$@; \
+	os=$$(echo $$target | cut -d_ -f1); \
+	arch=$$(echo $$target | cut -d_ -f2); \
+	echo "Building Docker image for $$target (OS: $$os, ARCH: $$arch)..."; \
+	docker buildx build \
+		--platform $$os/$$arch \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg GO_TAG=$(GO_TAG) \
+		--build-arg TARGETOS=$$os \
+		--build-arg TARGETARCH=$$arch \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg APP_REPO=$(APP_REPO) \
+		--output type=docker \
+		--tag $(REGISTRY)/$(APP):${VERSION}-$$target \
+		. ;
 
 image:
-	@echo "Create images supported on this host platform\n"
 	docker buildx create --use
 	@for target in $(TARGETS); do \
 		os=$$(echo $$target | cut -d_ -f1); \
