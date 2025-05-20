@@ -1,6 +1,6 @@
 git_repo_url = $(shell git remote get-url origin)
 APP = $(shell echo $(shell basename $(git_repo_url)) | sed 's/\.git//')
-APP_REPO = $(shell echo $(git_repo_url) | sed 's/git@/https:\/\//' | sed 's/:/\// | sed 's/\.git//')
+APP_REPO = $(shell echo $(git_repo_url) | sed 's/git@/https:\/\//' | sed 's/:/\//' | sed 's/\.git//')
 VERSION = $(shell git describe --tags --abbrev=0)-$(shell git rev-parse --short HEAD)
 
 
@@ -9,25 +9,30 @@ export $(shell sed 's/=.*//' .env)
 REGISTRY = $(REGISTRY_NAME)
 
 TARGETS = linux_amd64 linux_arm64 darwin_amd64 darwin_arm64 windows_amd64
-OUT_DIR = bin
+OUT_DIR=bin
 
 .PHONY: all $(TARGETS)
 
 all: $(TARGETS)
 
+go_init:
+	# fix error if go.mod already exists
+	[ -f src/go.mod ] || (cd src && go mod init $(APP))
+	## force dependency update
+	cd src && go get && cd ..
+
+lint:
+	cd src && golint  && cd ..
+
 format:
 	gofmt -s -w ./src
 
-get:
-	go get
+$(TARGETS): format go_init
+	@echo "Building $(word 1, $(subst _, ,$@)) binary for $(word 2, $(subst _, ,$@))..."
+	cd src && CGO_ENABLED=0 GOOS=$(word 1, $(subst _, ,$@)) GOARCH=$(word 2, $(subst _, ,$@)) go build -v -o ${OUT_DIR}/$@/${APP} -ldflags "-X="${APP_REPO}/cmd.appVersion=${VERSION} && cd ..
 
-$(TARGETS): format get
-	@echo "Building ${GOOS} binary for ${GOARCH}..."
-	GOOS = $(word 1, $(subst _, ,$@)) GOARCH = $(word 2, $(subst _, ,$@)) go build -o ${OUT_DIR}/$@/app src/main.go -ldflags "-X="${APP_REPO}/cmd.appVersion=$(VERSION)
-
-.PHONY: clean
 clean:
-	TARGETARCH = $(word 2, $(subst _, ,$@))
+	@echo "All Docker imageges will be deleted"
 	# ref: https://docs.docker.com/engine/cli/formatting/
-	docker rmi $(shell docker images "$(REGISTRY)/$(APP)" --format "{{.Repository}}:{{.Tag}}" | grep "$(TARGETARCH)" || true) || true
+	docker rmi $(shell docker images "$(REGISTRY)/$(APP)" --format "{{.Repository}}:{{.Tag}}" || true) || true
 	rm -rf ${OUT_DIR)
