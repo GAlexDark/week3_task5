@@ -43,51 +43,36 @@ $(TARGETS): format go_init
 
 linux: format go_init
 	@echo "Create app supported on this host platform\n"
-	@if [ -z $(findstring $@, $(supported_platforms)) ]; then \
-		echo "This builder does not supported on this host"; \
-		exit 1; \
-	else \
-		for target in $(TARGETS); do \
-			os=$$(echo $$target | cut -d_ -f1); \
-			if [ "$$os" = $@ ]; then \
-				arch=$$(echo $$target | cut -d_ -f2); \
-				echo "Building $$os binary for $$arch..."; \
-				cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
-			fi; \
-		done \
-	fi; \
+	for target in $(TARGETS); do \
+		os=$$(echo $$target | cut -d_ -f1); \
+		if [ "$$os" = $@ ]; then \
+			arch=$$(echo $$target | cut -d_ -f2); \
+			echo "Building $$os binary for $$arch..."; \
+			cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
+		fi; \
+	done \
 
 windows: format go_init
 	@echo "Create app supported on this host platform\n"
-	@if [ -z $(findstring $@, $(supported_platforms)) ]; then \
-		echo "This builder does not supported on this host"; \
-		exit 1; \
-	else \
-		for target in $(TARGETS); do \
-			os=$$(echo $$target | cut -d_ -f1); \
-			if [ "$$os" = $@ ]; then \
-				arch=$$(echo $$target | cut -d_ -f2); \
-				echo "Building $$os binary for $$arch..."; \
-				cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
-			fi; \
-		done \
-	fi; \
+	for target in $(TARGETS); do \
+		os=$$(echo $$target | cut -d_ -f1); \
+		if [ "$$os" = $@ ]; then \
+			arch=$$(echo $$target | cut -d_ -f2); \
+			echo "Building $$os binary for $$arch..."; \
+			cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
+		fi; \
+	done \
 
 darwin: format go_init
 	@echo "Create app supported on this host platform\n"
-	@if [ -z $(findstring $@, $(supported_platforms)) ]; then \
-		echo "This builder does not supported on this host"; \
-		exit 1; \
-	else \
-		for target in $(TARGETS); do \
-			os=$$(echo $$target | cut -d_ -f1); \
-			if [ "$$os" = $@ ]; then \
-				arch=$$(echo $$target | cut -d_ -f2); \
-				echo "Building $$os binary for $$arch..."; \
-				cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
-			fi; \
-		done \
-	fi; \
+	for target in $(TARGETS); do \
+		os=$$(echo $$target | cut -d_ -f1); \
+		if [ "$$os" = $@ ]; then \
+			arch=$$(echo $$target | cut -d_ -f2); \
+			echo "Building $$os binary for $$arch..."; \
+			cd src && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO_BUILD_CMD) && cd ..; \
+		fi; \
+	done \
 
 image:
 	@echo "Create images supported on this host platform\n"
