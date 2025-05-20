@@ -38,11 +38,6 @@ format:
 
 $(TARGETS): format go_init
 	@echo "Building special targets"
-	# using Make functions word & subst
-	@if [ -z $(findstring $(subst _, /,$@), $(supported_platforms)) ]; then \
-		echo "This builder does not supported on this host"; \
-		exit 1; \
-	fi; \
 	@echo "Building $(word 1, $(subst _, ,$@)) binary for $(word 2, $(subst _, ,$@))..."
 	cd src && CGO_ENABLED=0 GOOS=$(word 1, $(subst _, ,$@)) GOARCH=$(word 2, $(subst _, ,$@)) $(GO_BUILD_CMD) && cd ..
 
