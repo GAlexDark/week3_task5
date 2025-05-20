@@ -1,0 +1,17 @@
+ARG BASE_IMAGE
+ARG GO_TAG
+ARG BUILD_PLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+
+
+FROM --platform=${BUILD_PLATFORM} ${BASE_IMAGE}:${GO_TAG} AS build
+WORKDIR /app
+COPY src .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o app -ldflags "-X="${APP_REPO}/cmd.appVersion=$(VERSION)
+
+FROM scratch
+WORKDIR /
+COPY --from=builder /src/app .
+ENTRYPOINT [ "/app" ]
