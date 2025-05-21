@@ -18,6 +18,7 @@ REGISTRY = $(REGISTRY_NAME)
 TARGETS = linux_amd64 linux_arm64 linux_386 darwin_amd64 darwin_arm64 windows_amd64
 OUT_DIR=bin
 
+
 .PHONY: all $(TARGETS)
 
 all: $(TARGETS)
@@ -27,6 +28,9 @@ go_init:
 	[ -f src/go.mod ] || (cd src && go mod init $(APP))
 	## force dependency update
 	cd src && go get && cd ..
+
+go_build:
+	CGO_ENABLED=0 GOOS=${GOHOSTOS} GOARCH=${GOHOSTARCH} go build -v -o app -ldflags "-X="${APP_REPO}/cmd.appVersion=${VERSION}
 
 lint:
 	cd src && golint  && cd ..
@@ -43,8 +47,6 @@ $(TARGETS): format go_init
 		--platform $$os/$$arch \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg GO_TAG=$(GO_TAG) \
-		--build-arg TARGETOS=$$os \
-		--build-arg TARGETARCH=$$arch \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg APP_REPO=$(APP_REPO) \
 		--output type=docker \
@@ -60,8 +62,6 @@ image:
 			--platform $$os/$$arch \
 			--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 			--build-arg GO_TAG=$(GO_TAG) \
-			--build-arg TARGETOS=$$os \
-			--build-arg TARGETARCH=$$arch \
 			--build-arg VERSION=$(VERSION) \
 			--build-arg APP_REPO=$(APP_REPO) \
 			--output type=docker \
