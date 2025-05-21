@@ -2,14 +2,17 @@
 
 ToDo
 ```
-OS := $(shell uname -s)
+OS := $(shell uname -s) # base host linux
 
 ifeq ($(OS), Linux)
-	include makefile.linux
-else ifeq ($(OS), Darwin)  # macOS тоже Unix-подобный, если вдруг понадобится
-	include makefile.mac
+    all:
+        $(MAKE) -f makefile.linux $(ARGS)
+else ifeq ($(OS), Darwin)
+    all:
+        $(MAKE) -f makefile.mac $(ARGS)
 else ifeq ($(OS), Windows_NT)
-	include makefile.win
+    all:
+        $(MAKE) -f makefile.win $(ARGS)
 else
 $(error "Unknown platform: $(OS)")
 endif
